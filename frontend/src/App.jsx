@@ -9,6 +9,7 @@ const MOODS = [
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+
 function App() {
   const [selectedMood, setSelectedMood] = useState("DeepFocus");
   const [isLoading, setIsLoading] = useState(false);
