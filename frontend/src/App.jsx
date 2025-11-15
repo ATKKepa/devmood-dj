@@ -34,6 +34,45 @@ function App() {
 
   const isDark = theme === "dark";
 
+  const statsGrid = (
+    <div
+      className={`grid gap-3 text-xs ${
+        isDark ? "text-orange-200/70" : "text-slate-500"
+      } sm:grid-cols-3`}
+    >
+      <div
+        className={`rounded-2xl border px-3 py-2 ${
+          isDark ? "border-orange-900/60 bg-black/40" : "border-blue-100 bg-white"
+        }`}
+      >
+        <p className="text-[0.7rem] uppercase tracking-[0.2em]">Stack</p>
+        <p className={`mt-1 ${isDark ? "text-orange-100" : "text-slate-800"}`}>
+          React · Vite · Tailwind
+        </p>
+      </div>
+      <div
+        className={`rounded-2xl border px-3 py-2 ${
+          isDark ? "border-orange-900/60 bg-black/40" : "border-blue-100 bg-white"
+        }`}
+      >
+        <p className="text-[0.7rem] uppercase tracking-[0.2em]">Backend</p>
+        <p className={`mt-1 ${isDark ? "text-orange-100" : "text-slate-800"}`}>
+          AWS Lambda · Function URL
+        </p>
+      </div>
+      <div
+        className={`rounded-2xl border px-3 py-2 ${
+          isDark ? "border-orange-900/60 bg-black/40" : "border-blue-100 bg-white"
+        }`}
+      >
+        <p className="text-[0.7rem] uppercase tracking-[0.2em]">Data</p>
+        <p className={`mt-1 ${isDark ? "text-orange-100" : "text-slate-800"}`}>
+          OpenWeather · Spotify playlistit
+        </p>
+      </div>
+    </div>
+  );
+
   const handleGetRecommendation = async () => {
     setError("");
     setRecommendation(null);
@@ -127,13 +166,6 @@ function App() {
               />
               {API_BASE_URL ? "Yhteys pilveen OK" : "Backend-URL puuttuu"}
             </span>
-            <span
-              className={`rounded-full px-3 py-1 ${
-                isDark ? "bg-orange-900/50 text-orange-200" : "bg-blue-100 text-blue-700"
-              }`}
-            >
-              Side project · AWS + Spotify
-            </span>
             <div className="flex items-center gap-1 rounded-full border border-white/20 bg-white/5 p-0.5 text-xs">
               {["dark", "light"].map((mode) => (
                 <button
@@ -155,27 +187,9 @@ function App() {
           </div>
         </nav>
 
-        {/* Hero layout */}
         <main className="grid flex-1 items-center gap-8 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1.1fr)]">
-          {/* Left: hero text + controls */}
           <section className="space-y-8">
-            {/* Badge + heading */}
             <div className="space-y-4">
-              <div
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium shadow-[0_0_30px_rgba(0,0,0,0.15)] ${
-                  isDark
-                    ? "border-orange-400/60 bg-orange-500/20 text-orange-50"
-                    : "border-sky-400/60 bg-sky-100 text-sky-800"
-                }`}
-              >
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    isDark ? "bg-orange-400" : "bg-sky-500"
-                  }`}
-                />
-                Sääohjattu koodimoodi
-              </div>
-
               <div>
                 <h1 className={`text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl ${isDark ? "text-[#FFE7CC]" : "text-slate-900"}`}>
                   Viritä koodausmoodi
@@ -255,7 +269,6 @@ function App() {
               </div>
             </div>
 
-            {/* City selector */}
             <div className="space-y-2">
               <p
                 className={`text-xs font-semibold uppercase tracking-[0.22em] ${
@@ -288,7 +301,6 @@ function App() {
               </p>
             </div>
 
-            {/* Call to action + error */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <button
                 type="button"
@@ -335,58 +347,9 @@ function App() {
               )}
             </div>
 
-            {/* Little “stats” row */}
-            <div
-              className={`mt-2 grid gap-3 text-xs ${
-                isDark ? "text-orange-200/70" : "text-slate-500"
-              } sm:grid-cols-3`}
-            >
-              <div
-                className={`rounded-2xl px-3 py-2 border ${
-                  isDark
-                    ? "border-orange-900/60 bg-black/40"
-                    : "border-blue-100 bg-white"
-                }`}
-              >
-                <p className="text-[0.7rem] uppercase tracking-[0.2em]">
-                  Stack
-                </p>
-                <p className={`mt-1 ${isDark ? "text-orange-100" : "text-slate-800"}`}>
-                  React · Vite · Tailwind
-                </p>
-              </div>
-              <div
-                className={`rounded-2xl px-3 py-2 border ${
-                  isDark
-                    ? "border-orange-900/60 bg-black/40"
-                    : "border-blue-100 bg-white"
-                }`}
-              >
-                <p className="text-[0.7rem] uppercase tracking-[0.2em]">
-                  Backend
-                </p>
-                <p className={`mt-1 ${isDark ? "text-orange-100" : "text-slate-800"}`}>
-                  AWS Lambda · Function URL
-                </p>
-              </div>
-              <div
-                className={`rounded-2xl px-3 py-2 border ${
-                  isDark
-                    ? "border-orange-900/60 bg-black/40"
-                    : "border-blue-100 bg-white"
-                }`}
-              >
-                <p className="text-[0.7rem] uppercase tracking-[0.2em]">
-                  Data
-                </p>
-                <p className={`mt-1 ${isDark ? "text-orange-100" : "text-slate-800"}`}>
-                  OpenWeather · Spotify playlistit
-                </p>
-              </div>
-            </div>
+            <div className="mt-2 hidden md:block">{statsGrid}</div>
           </section>
 
-          {/* Right: “card” with recommendation */}
           <section className="relative flex items-center justify-center">
             <div
               className={`pointer-events-none absolute -inset-8 rounded-[2.5rem] opacity-80 blur-3xl ${
@@ -402,85 +365,115 @@ function App() {
                   : "border-blue-200 bg-white/80 text-slate-800 shadow-[0_40px_120px_rgba(148,163,184,0.45)]"
               }`}
             >
-              <div
-                className={`mb-4 flex items-center justify-between text-xs ${
-                  isDark ? "text-orange-200/80" : "text-slate-500"
-                }`}
-              >
-                <span className="uppercase tracking-[0.2em]">
-                  Now playing
-                </span>
-                <span
-                  className={`flex items-center gap-1 rounded-full px-2 py-1 ${
-                    isDark ? "bg-orange-900/60" : "bg-blue-100"
-                  }`}
-                >
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      isDark ? "bg-orange-400" : "bg-blue-500"
-                    }`}
-                  />
-                  <span className="font-semibold text-[0.7rem]">
-                    {recommendation ? "Suositus valmis" : "Odottaa pyyntöä"}
-                  </span>
-                </span>
-              </div>
-
-              <div
-                className={`mb-4 rounded-2xl border p-4 ${
-                  isDark
-                    ? "border-orange-900/60 bg-gradient-to-br from-black/60 to-orange-950/60"
-                    : "border-blue-100 bg-gradient-to-br from-sky-50 to-white"
-                }`}
-              >
-                <p
-                  className={`mb-1 text-[0.7rem] uppercase tracking-[0.2em] ${
-                    isDark ? "text-orange-200/80" : "text-slate-500"
-                  }`}
-                >
-                  Mood · Weather
-                </p>
-                <p className={`text-sm font-medium ${isDark ? "text-orange-50" : "text-slate-900"}`}>
-                  {recommendation
-                    ? `${recommendation.mood} · ${recommendation.weather}`
-                    : "Ei vielä dataa – valitse moodi vasemmalta"}
-                </p>
-              </div>
-
               {recommendation ? (
-                <div className="space-y-3">
-                  <div>
-                    <p
-                      className={`text-[0.7rem] uppercase tracking-[0.2em] ${
-                        isDark ? "text-orange-200/80" : "text-slate-500"
-                      }`}
-                    >
-                      Playlist
-                    </p>
-                    <h2 className={`mt-1 text-lg font-semibold ${isDark ? "text-orange-50" : "text-slate-800"}`}>
-                      {recommendation.playlistName || "Recommended playlist"}
-                    </h2>
-                    {recommendation.note && (
-                      <p className={`mt-1 text-xs ${isDark ? "text-orange-100/80" : "text-slate-700"}`}>
-                        {recommendation.note}
-                      </p>
-                    )}
+                <div className="space-y-4">
+                  <div
+                    className={`rounded-2xl border p-4 ${
+                      isDark
+                        ? "border-orange-900/60 bg-gradient-to-br from-black/60 to-orange-950/60"
+                        : "border-blue-100 bg-gradient-to-br from-sky-50 to-white"
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div>
+                        <p
+                          className={`text-[0.7rem] uppercase tracking-[0.2em] ${
+                            isDark ? "text-orange-200/80" : "text-slate-500"
+                          }`}
+                        >
+                          Mood · Weather
+                        </p>
+                        <p
+                          className={`text-sm font-medium ${
+                            isDark ? "text-orange-50" : "text-slate-900"
+                          }`}
+                        >
+                          {recommendation.mood} · {recommendation.weather}
+                        </p>
+                      </div>
+                      {recommendation.source && (
+                        <span
+                          className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] ${
+                            recommendation.source === "spotify"
+                              ? isDark
+                                ? "bg-orange-500/20 text-orange-100 border border-orange-400/60"
+                                : "bg-sky-100 text-sky-700 border border-sky-300"
+                              : isDark
+                                ? "bg-black/40 text-orange-200/90 border border-orange-900/60"
+                                : "bg-slate-100 text-slate-600 border border-slate-200"
+                          }`}
+                        >
+                          {recommendation.source === "spotify"
+                            ? "Spotify search"
+                            : "Fallback rules"}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {recommendation.playlistUrl && (
-                    <a
-                      href={recommendation.playlistUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold shadow-md ${
-                        isDark
-                          ? "bg-gradient-to-r from-orange-400 to-amber-300 text-[#1B0902] shadow-orange-900/60"
-                          : "bg-gradient-to-r from-blue-500 to-cyan-400 text-white shadow-blue-200/60"
-                      }`}
-                    >
-                      Avaa Spotifyssa
-                      <span className="text-sm">↗</span>
-                    </a>
+                  {recommendation.options?.length > 0 && (
+                    <div className="space-y-3">
+                      <p
+                        className={`text-[0.7rem] uppercase tracking-[0.2em] ${
+                          isDark ? "text-orange-200/80" : "text-slate-500"
+                        }`}
+                      >
+                        Vaihtoehdot Spotifysta
+                      </p>
+                      <div className="space-y-3 sm:space-y-2">
+                        {(recommendation.options?.slice(0, 3) || []).map((option) => (
+                          <div
+                            key={option.url}
+                            className={`flex flex-col gap-3 rounded-2xl border p-3 text-sm sm:flex-row sm:items-center ${
+                              isDark
+                                ? "border-orange-900/60 bg-black/40"
+                                : "border-blue-100 bg-slate-50"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 sm:flex-1">
+                              {option.imageUrl ? (
+                                <img
+                                  src={option.imageUrl}
+                                  alt={option.name}
+                                  className="h-14 w-14 rounded-xl object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div
+                                  className={`h-14 w-14 rounded-xl text-xs font-semibold uppercase tracking-widest ${
+                                    isDark ? "bg-orange-900/50" : "bg-slate-200"
+                                  } flex items-center justify-center`}
+                                >
+                                  DJ
+                                </div>
+                              )}
+                              <div className="flex flex-1 flex-col">
+                                <span className={`font-semibold ${isDark ? "text-orange-50" : "text-slate-900"}`}>
+                                  {option.name}
+                                </span>
+                                {option.owner && (
+                                  <span className={`text-xs ${isDark ? "text-orange-200/80" : "text-slate-600"}`}>
+                                    by {option.owner}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <a
+                              href={option.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={`inline-flex items-center justify-center rounded-full px-4 py-1.5 text-xs font-semibold ${
+                                isDark
+                                  ? "bg-gradient-to-r from-orange-400 to-amber-300 text-[#1B0902]"
+                                  : "bg-gradient-to-r from-blue-500 to-cyan-400 text-white"
+                              }`}
+                            >
+                              Play
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               ) : (
@@ -490,12 +483,15 @@ function App() {
                   }`}
                 >
                   Kun haet suosituksen, tähän ilmestyy{" "}
-                  <span className="text-slate-200">päivän DevMood-lista</span> –
+                  <span className={isDark ? "text-orange-50" : "text-slate-800"}>päivän DevMood-lista</span> –
                   sää, moodi ja soittolista samassa näkymässä.
                 </p>
               )}
             </div>
           </section>
+
+          {/* Stats block for small screens under playlist */}
+          <div className="mt-6 md:hidden">{statsGrid}</div>
         </main>
       </div>
     </div>

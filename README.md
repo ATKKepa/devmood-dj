@@ -1,43 +1,118 @@
 # DevMood DJ
 
-_Weather- and mood-driven Spotify helper for developers._
+Personal “mood DJ” for developers: pick your coding mood, select the city you are in, and DevMood DJ returns a Spotify playlist that matches both your vibe and the current weather.
 
-DevMood DJ is a personal tool that recommends music to match your current coding mood.
-The app combines:
+## Highlights
 
-- **Spotify Web API** - user playlists and favorites
-- **Weather API** (e.g., OpenWeather) - current conditions
-- **AWS serverless backend** - logic and rules
-- **React frontend** - a simple UI to kick off a coding session
+- 🎧 **Mood aware playlists** – Deep Focus, Motivation, Light Coding, Feel Good and more.
+- 🌦️ **Live weather context** – Uses OpenWeather data for whichever city you pick.
+- 🌓 **Dual theming** – Orange/black dark mode and white/blue light mode with instant switching.
+- 🗺️ **City selector** – Preloads the biggest Finnish cities plus Stockholm and London.
+- ⚡ **Serverless ready backend** – AWS Lambda combines mood + weather rules and returns playlists.
 
-> Example: if it is raining outside and you pick the _Motivation_ mood, the app suggests
-> an energetic boost playlist. On a sunny Saturday morning the same mood can route to a lighter feel-good list.
+## System Architecture
 
-## Tech stack
+- **Frontend (frontend/)**
+  - React + Vite + Tailwind CSS v3.
+  - Fetches `POST /recommendation` from the backend via `VITE_API_BASE_URL`.
+  - Hosted on AWS S3/CloudFront (or any static host).
+- **Backend (backend/)**
+  - Node.js Lambda deployed behind API Gateway.
+  - Calls OpenWeather API with the selected city and mood rules (hard-coded or future DynamoDB table).
+  - Returns playlist metadata + Spotify URL.
+- **External services**
+  - OpenWeather API for current conditions.
+  - Spotify public playlists (OAuth can be added later).
 
-- **Frontend:** React + Vite, single-page app (SPA)
-- **Backend:** AWS Lambda + API Gateway (serverless)
-- **Data:** DynamoDB (user rules, settings, and profile)
-- **Infra:** S3 (frontend hosting), possibly CloudFront later
-- **APIs:**
-  - Spotify Web API (OAuth2, playlist fetch and management)
-  - Weather API (e.g., OpenWeather current weather)
+```
+┌──────────────┐     POST /recommendation      ┌─────────────────────┐      ┌──────────────────┐
+│  React/Vite  │ ───────────────────────────▶ │ AWS Lambda (Node.js) │ ───▶│ OpenWeather API  │
+│  Frontend    │ ◀─────────────────────────── │ + API Gateway        │ ───▶│ Spotify Playlists│
+└──────────────┘       playlist response       └─────────────────────┘      └──────────────────┘
+```
 
-## Secrets policy
+## Tech Stack
 
-This repo does not contain any secrets:
+| Layer      | Details |
+|------------|---------|
+| Frontend   | React 19, Vite, Tailwind CSS 3, custom theming |
+| Backend    | AWS Lambda (Node.js), AWS API Gateway |
+| Data       | Hard-coded rules → future DynamoDB table |
+| Infra      | S3/CloudFront (frontend), Lambda + API Gateway (backend) |
+| APIs       | OpenWeather, Spotify public playlists |
 
-- No Spotify client secret or access tokens
-- No weather API key
-- No AWS access key
+## Local Development
 
-All secrets are set via **environment variables** (e.g., `.env` locally and Lambda environment variables in the cloud).
+### Prerequisites
 
-## Project status
+- Node.js 20+
+- npm 10+
 
-- [ ] Project plan (`PROJECT_PLAN.md`)
-- [ ] Frontend skeleton (React + Vite)
-- [ ] Backend skeleton (Lambda handler + API Gateway plan)
-- [ ] DynamoDB schema for rules
-- [ ] Spotify + weather API integration
-- [ ] Deploy to S3 (frontend) + Lambda (backend)
+### Setup steps
+
+```bash
+cd frontend
+npm install
+cp .env.example .env   # create manually if the file does not exist
+```
+
+Edit `.env` and set:
+
+```
+VITE_API_BASE_URL=https://your-lambda-function-url.amazonaws.com
+```
+
+### Run the app
+
+```bash
+npm run dev
+```
+
+### Production build
+
+```bash
+npm run build
+npm run preview   # optional local preview of the dist/ folder
+```
+
+## Backend Contract
+
+`POST /recommendation`
+
+```json
+{
+  "mood": "DeepFocus",
+  "city": "Helsinki,FI"
+}
+```
+
+Response example:
+
+```json
+{
+  "mood": "DeepFocus",
+  "weather": "Rain",
+  "playlistName": "Deep Focus Rain Sessions",
+  "playlistUrl": "https://open.spotify.com/playlist/123",
+  "note": "Rain helps you tunnel into the hard stuff."
+}
+```
+
+## Secrets & Environment
+
+- Never commit Spotify, OpenWeather, or AWS credentials.
+- Frontend uses Vite env vars (`VITE_*`).
+- Lambda stores its own environment variables for API keys.
+
+## Deployment Notes
+
+1. **Frontend** – `npm run build`, upload `frontend/dist` to S3/CloudFront.
+2. **Backend** – Package Lambda (or use CDK/SAM) and expose `POST /recommendation` via API Gateway.
+3. **Config** – Update `VITE_API_BASE_URL` to the gateway URL and redeploy the frontend.
+
+## Roadmap
+
+- [ ] Implement real OpenWeather + Spotify API hooks in the Lambda function.
+- [ ] Store mood/weather rules in DynamoDB for easy edits.
+- [ ] Add Spotify OAuth to allow personal playlists.
+- [ ] Analytics view: what you listen to in each weather + mood combo.
