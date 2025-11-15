@@ -1,8 +1,8 @@
 # DevMood DJ 🎧
 
-DevMood DJ is a small but polished full‑stack project that combines **your coding mood, real‑time weather data and Spotify playlists** into a focused, single‑screen experience.
+I built DevMood DJ because I always get stuck trying to choose the “right” playlist when I sit down to code. Instead of scrolling through Spotify and overthinking it, I wanted something that would just suggest a few good options and let me start working.
 
-You pick a mood and a city → the backend fetches the current weather and queries the Spotify Web API for matching playlists → the frontend shows you a few playlist options (with cover images) so you can pick the one that feels best for this coding session.
+DevMood DJ is a small but polished full-stack app that does exactly that: it takes your current coding mood and local weather, talks to OpenWeather and Spotify, and returns a handful of matching playlists so you can simply pick one and get into flow.
 
 ---
 
