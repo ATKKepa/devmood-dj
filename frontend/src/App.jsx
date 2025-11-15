@@ -7,6 +7,21 @@ const MOODS = [
   { id: "FeelGood", label: "Feel good", description: "Hyvän mielen flow-tila" },
 ];
 
+const CITY_OPTIONS = [
+  { value: "Helsinki,FI", label: "Helsinki" },
+  { value: "Espoo,FI", label: "Espoo" },
+  { value: "Tampere,FI", label: "Tampere" },
+  { value: "Vantaa,FI", label: "Vantaa" },
+  { value: "Oulu,FI", label: "Oulu" },
+  { value: "Turku,FI", label: "Turku" },
+  { value: "Jyväskylä,FI", label: "Jyväskylä" },
+  { value: "Kuopio,FI", label: "Kuopio" },
+  { value: "Lahti,FI", label: "Lahti" },
+  { value: "Pori,FI", label: "Pori" },
+  { value: "Stockholm,SE", label: "Stockholm" },
+  { value: "London,GB", label: "London" },
+];
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function App() {
@@ -15,6 +30,7 @@ function App() {
   const [recommendation, setRecommendation] = useState(null);
   const [error, setError] = useState("");
   const [theme, setTheme] = useState("dark");
+  const [city, setCity] = useState("Turku,FI");
 
   const isDark = theme === "dark";
 
@@ -34,7 +50,7 @@ function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ mood: selectedMood }),
+        body: JSON.stringify({ mood: selectedMood, city }),
       });
 
       if (!res.ok) {
@@ -237,6 +253,39 @@ function App() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* City selector */}
+            <div className="space-y-2">
+              <p
+                className={`text-xs font-semibold uppercase tracking-[0.22em] ${
+                  isDark ? "text-orange-200/70" : "text-slate-500"
+                }`}
+              >
+                Kaupunki
+              </p>
+              <select
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className={`w-full max-w-xs rounded-2xl border px-3 py-2 text-sm shadow-sm outline-none transition ${
+                  isDark
+                    ? "border-orange-900/70 bg-black/60 text-orange-100 focus:border-orange-400 focus:ring-1 focus:ring-orange-400/70"
+                    : "border-blue-200 bg-white text-slate-800 focus:border-sky-400 focus:ring-1 focus:ring-sky-400/70"
+                }`}
+              >
+                {CITY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p
+                className={`text-[0.7rem] ${
+                  isDark ? "text-orange-200/70" : "text-slate-600"
+                }`}
+              >
+                Valittua kaupunkia käytetään OpenWeather-kyselyssä.
+              </p>
             </div>
 
             {/* Call to action + error */}
