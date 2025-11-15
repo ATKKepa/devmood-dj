@@ -6,29 +6,20 @@ You pick a mood and a city → the backend fetches the current weather and queri
 
 ---
 
-## Live demo
-
-> 🔗 **Demo URL:** _TODO: add your deployed frontend URL here_  
-> For example: `https://devmood-dj.your-domain.com` or a Vercel/Netlify link.
-
-The frontend calls an **AWS Lambda Function URL** as its backend API. You only need to update one environment variable in the frontend to point to the correct Lambda URL.
-
----
 
 ## Screenshots
 
-Create a `screenshots/` folder in the repo (or GitHub “Assets”) and add some images, for example:
+| Light mode hero | Dark mode hero |
+| --- | --- |
+| ![Light mode homepage](docs/screenshots/pageLight.png) | ![Dark mode homepage](docs/screenshots/pageDark.png) |
 
-- `screenshots/devmood-hero.png` – main hero view with mood & city selector
-- `screenshots/devmood-options.png` – playlist options with Spotify covers
-- `screenshots/devmood-mobile.png` – mobile layout (optional)
+| Spotify search results (light) | Spotify search results (dark) |
+| --- | --- |
+| ![Playlist search light](docs/screenshots/playlistsearchedLight.png) | ![Playlist search dark](docs/screenshots/playlistsearchedDark.png) |
 
-Then reference them here once you have them, for example:
-
-```md
-![DevMood DJ – main view](screenshots/devmood-hero.png)
-![Playlist options](screenshots/devmood-options.png)
-```
+| Responsive preview | Fallback recommendation |
+| --- | --- |
+| ![Responsive layouts](docs/screenshots/responsiveDark.png) | ![Fallback playlist state](docs/screenshots/fallbackDark.png) |
 
 ---
 
@@ -95,7 +86,6 @@ Then reference them here once you have them, for example:
 
 The frontend renders this data into:
 
-- a “Now playing” card showing the selected playlist
 - a grid of playlist options (cover + title) you can click
 - a button that opens the selected playlist in Spotify
 
@@ -148,19 +138,29 @@ If Spotify fails or returns nothing, the response is the same shape, but:
 ```text
 devmood-dj/
 ├── backend/
-│   └── index.mjs          # AWS Lambda handler (Node.js 22, ESM)
+│   ├── package.json       # Lambda dependencies (Node.js 22, ESM)
+│   └── index.mjs          # AWS Lambda handler
 │
 ├── frontend/
 │   ├── index.html
 │   ├── vite.config.*
 │   ├── tailwind.config.cjs
 │   ├── postcss.config.cjs
+│   ├── package.json
 │   └── src/
 │       ├── main.jsx       # React entry, imports Tailwind CSS
 │       ├── App.jsx        # Main UI: mood, city, playlists, layout
 │       └── index.css      # Tailwind directives + base styles
 │
-├── PROJECT_PLAN.md        # Initial planning document / notes
+├── docs/
+│   ├── screenshots/       # README visuals (light/dark/responsive states)
+│   │   ├── pageLight.png
+│   │   ├── pageDark.png
+│   │   ├── playlistsearchedLight.png
+│   │   ├── playlistsearchedDark.png
+│   │   ├── responsiveDark.png
+│   │   └── fallbackDark.png
+│   └── PROJECT_PLAN.md    # Initial planning document / notes
 └── README.md              # This file
 ```
 
