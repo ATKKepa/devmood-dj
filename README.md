@@ -37,7 +37,7 @@ DevMood DJ is a small but polished full-stack app that does exactly that: it tak
 - ☁️ **Serverless backend on AWS**  
   A single AWS Lambda function (Node.js 22, ESM) exposed via a Function URL. No servers to manage.
 
-- 💅 **Modern, portfolio‑style UI**  
+- 💅 **Modern UI**  
   React + Vite + Tailwind CSS with a polished dark theme, gradient background, “pill” mood buttons and a compact “Now playing” card.
 
 - 🛡 **Graceful fallback**  
