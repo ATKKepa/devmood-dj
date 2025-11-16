@@ -138,7 +138,6 @@ If Spotify fails or returns nothing, the response is the same shape, but:
 ```text
 devmood-dj/
 ├── backend/
-│   ├── package.json       # Lambda dependencies (Node.js 22, ESM)
 │   └── index.mjs          # AWS Lambda handler
 │
 ├── frontend/
@@ -153,14 +152,14 @@ devmood-dj/
 │       └── index.css      # Tailwind directives + base styles
 │
 ├── docs/
-│   ├── screenshots/       # README visuals (light/dark/responsive states)
-│   │   ├── pageLight.png
-│   │   ├── pageDark.png
-│   │   ├── playlistsearchedLight.png
-│   │   ├── playlistsearchedDark.png
-│   │   ├── responsiveDark.png
-│   │   └── fallbackDark.png
-│   └── PROJECT_PLAN.md    # Initial planning document / notes
+│   └── screenshots/       # README visuals (light/dark/responsive states)
+│       ├── pageLight.png
+│       ├── pageDark.png
+│       ├── playlistsearchedLight.png
+│       ├── playlistsearchedDark.png
+│       ├── responsiveDark.png
+│       └── fallbackDark.png
+├── PROJECT_PLAN.md        # Initial planning document / notes
 └── README.md              # This file
 ```
 
@@ -233,6 +232,7 @@ However, the handler is simple and could be adapted to a local server if needed.
 - The backend uses **client credentials flow** for Spotify, so it does **not** access user-specific data, only public playlists.
 - Playlist suggestions are based on search queries that take into account both mood and weather. The mapping from weather to buckets (`Clear`, `Rain`, `Clouds`) is intentionally simple.
 - Fallback playlists ensure the app remains usable even if Spotify or OpenWeather are down or rate-limited.
+- When you deploy the backend, copy (or upload) the latest `backend/index.mjs` into your AWS Lambda function code — the handler is a single file, so updating it is just replacing that file in Lambda.
 
 ---
 
