@@ -1,5 +1,4 @@
 // index.mjs – DevMood DJ Lambda (Node 22, ESM)
-// Provides a recommendation that mixes mood + weather data + Spotify search.
 
 const PLAYLISTS = {
   Clear: {
@@ -70,6 +69,56 @@ const PLAYLISTS = {
   },
 };
 
+
+function mapWeatherToBucket(main) {
+  const m = (main || "").toLowerCase();
+
+  if (m.includes("rain") || m.includes("drizzle") || m.includes("thunder")) {
+    return "Rain";
+  }
+  if (m.includes("cloud")) {
+    return "Clouds";
+  }
+  if (m.includes("snow")) {
+    return "Clouds";
+  }
+  return "Clear";
+}
+
+async function getCurrentWeatherBucket(cityFromRequest) {
+  const apiKey = process.env.OPENWEATHER_API_KEY;
+  const fallbackCityEnv = process.env.OPENWEATHER_CITY;
+  const city = cityFromRequest || fallbackCityEnv || "Helsinki,FI";
+
+  if (!apiKey) {
+    console.warn("OPENWEATHER_API_KEY puuttuu, palautetaan Clear.");
+    return "Clear";
+  }
+
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
+    city
+  )}&units=metric&appid=${apiKey}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error("OpenWeather status:", res.status, await res.text());
+      return "Clear";
+    }
+
+    const data = await res.json();
+    const main = data.weather?.[0]?.main || "Clear";
+    const bucket = mapWeatherToBucket(main);
+    console.log("OpenWeather city:", city, "main:", main, "=> bucket:", bucket);
+    return bucket;
+  } catch (err) {
+    console.error("OpenWeather error:", err);
+    return "Clear";
+  }
+}
+
+
+
 const SPOTIFY_QUERY_HINTS = {
   Clear: {
     DeepFocus: "deep focus coding sunny",
@@ -91,66 +140,8 @@ const SPOTIFY_QUERY_HINTS = {
   },
 };
 
-function mapWeatherToBucket(main) {
-  const normalized = (main || "").toLowerCase();
-  if (normalized.includes("rain") || normalized.includes("drizzle") || normalized.includes("thunder")) {
-    return "Rain";
-  }
-  if (normalized.includes("cloud") || normalized.includes("snow")) {
-    return "Clouds";
-  }
-  return "Clear";
-}
-
-async function getCurrentWeatherBucket(cityFromRequest) {
-  const apiKey = process.env.OPENWEATHER_API_KEY;
-  const fallbackCityEnv = process.env.OPENWEATHER_CITY;
-  const city = cityFromRequest || fallbackCityEnv || "Helsinki,FI";
-
-  if (!apiKey) {
-    console.warn("OPENWEATHER_API_KEY puuttuu, palautetaan Clear.");
-    return "Clear";
-  }
-
-  const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${apiKey}`;
-
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      const body = await res.text();
-      console.error("OpenWeather status:", res.status, body);
-      return "Clear";
-    }
-
-    const data = await res.json();
-    const main = data.weather?.[0]?.main || "Clear";
-    const bucket = mapWeatherToBucket(main);
-    console.log("OpenWeather city:", city, "main:", main, "=> bucket:", bucket);
-    return bucket;
-  } catch (err) {
-    console.error("OpenWeather error:", err);
-    return "Clear";
-  }
-}
-
-function choosePlaylistFallback(mood, weatherBucket) {
-  const normalizedMood = mood || "DeepFocus";
-  const normalizedWeather = weatherBucket || "Clear";
-
-  const weatherBlock = PLAYLISTS[normalizedWeather] || PLAYLISTS.Clear;
-  const recommendation = weatherBlock[normalizedMood] || weatherBlock.DeepFocus;
-
-  return {
-    mood: normalizedMood,
-    weather: normalizedWeather,
-    playlistName: recommendation.name,
-    playlistUrl: recommendation.url,
-    note: recommendation.note,
-  };
-}
-
-let cachedSpotifyToken;
-let tokenExpiresAt = 0;
+let cachedSpotifyToken = null;
+let cachedSpotifyTokenExpiresAt = 0;
 
 async function getSpotifyAccessToken() {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
@@ -162,14 +153,12 @@ async function getSpotifyAccessToken() {
   }
 
   const now = Date.now();
-  if (cachedSpotifyToken && now < tokenExpiresAt) {
+  if (cachedSpotifyToken && now < cachedSpotifyTokenExpiresAt - 60_000) {
     return cachedSpotifyToken;
   }
 
   const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-  const body = new URLSearchParams({ grant_type: "client_credentials" });
 
-  console.log("Requesting Spotify access token…");
   try {
     const res = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
@@ -177,18 +166,20 @@ async function getSpotifyAccessToken() {
         Authorization: `Basic ${basic}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body,
+      body: "grant_type=client_credentials",
     });
 
     if (!res.ok) {
-      const text = await res.text();
-      console.error("Spotify token status:", res.status, text);
+      console.error("Spotify token status:", res.status, await res.text());
       return null;
     }
 
-    const json = await res.json();
-    cachedSpotifyToken = json.access_token;
-    tokenExpiresAt = now + (json.expires_in - 30) * 1000; // refresh 30s early
+    const data = await res.json();
+    const expiresInSec = data.expires_in || 3600;
+    cachedSpotifyToken = data.access_token;
+    cachedSpotifyTokenExpiresAt = Date.now() + expiresInSec * 1000;
+
+    console.log("Spotify token fetched, expires in", expiresInSec, "s");
     return cachedSpotifyToken;
   } catch (err) {
     console.error("Spotify token error:", err);
@@ -196,17 +187,16 @@ async function getSpotifyAccessToken() {
   }
 }
 
-async function searchSpotifyPlaylist(query) {
+async function searchSpotifyPlaylists(query, limit = 10) {
   const token = await getSpotifyAccessToken();
-  if (!token) return null;
+  if (!token) return [];
 
   const url = `https://api.spotify.com/v1/search?${new URLSearchParams({
     q: query,
     type: "playlist",
-    limit: "1",
-  })}`;
+    limit: String(limit),
+  }).toString()}`;
 
-  console.log("Spotify search query:", query);
   try {
     const res = await fetch(url, {
       headers: {
@@ -217,55 +207,93 @@ async function searchSpotifyPlaylist(query) {
     if (!res.ok) {
       const text = await res.text();
       console.error("Spotify search status:", res.status, text);
-      return null;
+      return [];
     }
 
     const data = await res.json();
-    const playlist = data.playlists?.items?.[0];
-    if (!playlist) {
-      console.warn("Spotify search returned no playlists for query:", query);
-      return null;
-    }
+    const items = data.playlists?.items || [];
+    if (!items.length) return [];
 
-    return {
-      name: playlist.name,
-      url: playlist.external_urls?.spotify || "",
-    };
+    const shuffled = items.sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 3);
+
+    return selected.map((pl) => ({
+      name: pl.name,
+      url: pl.external_urls?.spotify || "",
+      imageUrl: pl.images?.[0]?.url || null,
+      owner: pl.owner?.display_name || null,
+    }));
   } catch (err) {
     console.error("Spotify search error:", err);
-    return null;
+    return [];
   }
+}
+
+function choosePlaylistFallback(mood, weatherBucket) {
+  const normalizedMood = mood || "DeepFocus";
+  const normalizedWeather = weatherBucket || "Clear";
+
+  const weatherBlock = PLAYLISTS[normalizedWeather] || PLAYLISTS.Clear;
+  const recommendation =
+    weatherBlock[normalizedMood] || weatherBlock.DeepFocus;
+
+  return {
+    mood: normalizedMood,
+    weather: normalizedWeather,
+    playlistName: recommendation.name,
+    playlistUrl: recommendation.url,
+    note: recommendation.note,
+  };
 }
 
 async function buildRecommendation(mood, weatherBucket) {
   const fallback = choosePlaylistFallback(mood, weatherBucket);
 
-  const hintsByWeather = SPOTIFY_QUERY_HINTS[weatherBucket] || SPOTIFY_QUERY_HINTS.Clear;
+  const hintsByWeather =
+    SPOTIFY_QUERY_HINTS[weatherBucket] || SPOTIFY_QUERY_HINTS.Clear;
   const query =
-    hintsByWeather[mood] || `${mood} coding playlist ${weatherBucket.toLowerCase()} weather`;
+    hintsByWeather[mood] ||
+    `${mood} coding playlist ${weatherBucket.toLowerCase()} weather`;
 
   try {
-    const spotifyResult = await searchSpotifyPlaylist(query);
+    const spotifyResults = await searchSpotifyPlaylists(query, 10);
 
-    if (!spotifyResult) {
-      console.warn("Spotify search failed/empty, using fallback.");
+    if (!spotifyResults || spotifyResults.length === 0) {
+      console.warn("Spotify search returned no playlists, using fallback.");
       return {
         ...fallback,
         source: "fallback",
+        options: [
+          {
+            name: fallback.playlistName,
+            url: fallback.playlistUrl,
+            imageUrl: null,
+          },
+        ],
       };
     }
+
+    const first = spotifyResults[0];
 
     return {
       ...fallback,
       source: "spotify",
-      playlistName: spotifyResult.name,
-      playlistUrl: spotifyResult.url || fallback.playlistUrl,
+      playlistName: first.name,
+      playlistUrl: first.url || fallback.playlistUrl,
+      options: spotifyResults, // max 3 vaihtoehtoa
     };
   } catch (err) {
-    console.error("buildRecommendation Spotify error:", err);
+    console.error("buildRecommendation error:", err);
     return {
       ...fallback,
       source: "fallback",
+      options: [
+        {
+          name: fallback.playlistName,
+          url: fallback.playlistUrl,
+          imageUrl: null,
+        },
+      ],
     };
   }
 }
@@ -278,7 +306,7 @@ export const handler = async (event) => {
   };
 
   let mood = "DeepFocus";
-  let cityFromRequest;
+  let cityFromRequest = undefined;
 
   try {
     if (event.body) {
