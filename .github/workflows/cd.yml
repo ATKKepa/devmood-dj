@@ -1,0 +1,116 @@
+﻿# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+env:
+  NODE_VERSION: 20
+
+jobs:
+  build-frontend:
+    name: Build frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Archive dist
+        run: zip -r ../frontend-dist.zip dist
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend-dist.zip
+          if-no-files-found: error
+
+  package-backend:
+    name: Package backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Syntax check Lambda handler
+        run: node --check backend/index.mjs
+
+      - name: Archive Lambda bundle
+        run: |
+          cd backend
+          zip -r ../lambda.zip index.mjs
+
+      - name: Upload Lambda artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-bundle
+          path: lambda.zip
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs:
+      - build-frontend
+      - package-backend
+    if: ${{ secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' && secrets.AWS_REGION != '' && secrets.LAMBDA_FUNCTION_NAME != '' }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      LAMBDA_FUNCTION_NAME: ${{ secrets.LAMBDA_FUNCTION_NAME }}
+      FRONTEND_BUCKET: ${{ secrets.FRONTEND_BUCKET }}
+    steps:
+      - name: Download Lambda artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-bundle
+          path: artifacts/lambda
+
+      - name: Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: artifacts/frontend
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name "$LAMBDA_FUNCTION_NAME" \
+            --zip-file fileb://artifacts/lambda/lambda.zip
+
+      - name: Publish frontend to S3 (optional)
+        if: ${{ env.FRONTEND_BUCKET != '' }}
+        run: |
+          mkdir -p artifacts/frontend-dist
+          unzip -q artifacts/frontend/frontend-dist.zip -d artifacts/frontend-dist
+          aws s3 sync artifacts/frontend-dist/dist/ "s3://$FRONTEND_BUCKET/" --delete

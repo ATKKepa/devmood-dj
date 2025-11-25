@@ -202,6 +202,21 @@ If `city` is not provided, it falls back to `OPENWEATHER_CITY` and then to `Hels
 
 ---
 
+## CI/CD
+
+- `.github/workflows/ci.yml` runs on every push/PR. It lints and builds the frontend with Node 20 and performs a syntax check on the Lambda handler with Node 22.
+- `.github/workflows/cd.yml` runs on pushes to `main`. It builds both sides, uploads artifacts (`frontend-dist.zip` and `lambda.zip`), and, if AWS secrets are present, deploys the Lambda and optionally syncs the built frontend to S3.
+
+Configure the following repository secrets for automated deploys:
+
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`
+- `LAMBDA_FUNCTION_NAME` (required for Lambda deploy)
+- `FRONTEND_BUCKET` (optional, enables S3 sync of the built frontend)
+
+If the AWS secrets are not set, the CD workflow still produces artifacts you can download from the workflow run.
+
+---
+
 ## Running locally
 
 ### Frontend
