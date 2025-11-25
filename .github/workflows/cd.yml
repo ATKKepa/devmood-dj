@@ -69,13 +69,41 @@ jobs:
           path: lambda.zip
           if-no-files-found: error
 
+  check-deploy-secrets:
+    name: Check deploy secrets
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          LAMBDA_FUNCTION_NAME: ${{ secrets.LAMBDA_FUNCTION_NAME }}
+        run: |
+          missing=""
+          for var in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION LAMBDA_FUNCTION_NAME; do
+            if [ -z "${!var}" ]; then
+              missing="$missing $var"
+            fi
+          done
+
+          if [ -n "$missing" ]; then
+            echo "Skipping deploy; missing:$missing"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
     needs:
+      - check-deploy-secrets
       - build-frontend
       - package-backend
-    if: ${{ env.AWS_ACCESS_KEY_ID != '' && env.AWS_SECRET_ACCESS_KEY != '' && env.AWS_REGION != '' && env.LAMBDA_FUNCTION_NAME != '' }}
+    if: ${{ needs.check-deploy-secrets.outputs.ready == 'true' }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
